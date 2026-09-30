@@ -4,7 +4,8 @@ export class Gameboard {
   constructor(size = 10) {
     this.size = size;
     this.ships = [];           // { ship, coordinates: [{x,y}, ...] }
-    this.missedAttacks = [];   // will be filled later..
+    this.missedAttacks = [];   // [{x,y}, ...]
+    this.attacks = [];         // every coordinate ever attacked
   }
 
   placeShip(length, start, direction = 'horizontal') {
@@ -28,5 +29,31 @@ export class Gameboard {
     const ship = new Ship(length);
     this.ships.push({ ship, coordinates });
     return ship;
+  }
+
+  receiveAttack({ x, y }) {
+    const alreadyAttacked = this.attacks.some(
+      (c) => c.x === x && c.y === y
+    );
+    if (alreadyAttacked) throw new Error('Coordinate already attacked');
+
+    this.attacks.push({ x, y });
+
+    const target = this.ships.find((placed) =>
+      placed.coordinates.some((c) => c.x === x && c.y === y)
+    );
+
+    if (target) {
+      target.ship.hit();
+      return 'hit';
+    }
+
+    this.missedAttacks.push({ x, y });
+    return 'miss';
+  }
+
+  allSunk() {
+    if (this.ships.length === 0) return false;
+    return this.ships.every((placed) => placed.ship.isSunk());
   }
 }
