@@ -56,4 +56,21 @@ export class Gameboard {
     if (this.ships.length === 0) return false;
     return this.ships.every((placed) => placed.ship.isSunk());
   }
+
+  placeShipRandomly(length, rand = Math.random) {
+    const maxAttempts = 200;
+    for (let i = 0; i < maxAttempts; i++) {
+      const direction = rand() < 0.5 ? 'horizontal' : 'vertical';
+      const maxX = direction === 'horizontal' ? this.size - length : this.size - 1;
+      const maxY = direction === 'vertical' ? this.size - length : this.size - 1;
+      const x = Math.floor(rand() * (maxX + 1));
+      const y = Math.floor(rand() * (maxY + 1));
+      try {
+        return this.placeShip(length, { x, y }, direction);
+      } catch {
+        // overlap or out of bounds — try again
+      }
+    }
+    throw new Error('Could not place ship after max attempts');
+  }
 }

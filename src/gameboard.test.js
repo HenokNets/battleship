@@ -114,3 +114,39 @@ describe('Gameboard attacks', () => {
     expect(board.allSunk()).toBe(false);
   });
 });
+
+describe('Gameboard — random placement', () => {
+  test('placeShipRandomly places a ship of the given length', () => {
+    const board = new Gameboard();
+    // rand = 0 → horizontal, x=0, y=0
+    const ship = board.placeShipRandomly(3, () => 0);
+    expect(ship.length).toBe(3);
+    expect(board.ships.length).toBe(1);
+    expect(board.ships[0].coordinates).toEqual([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+    ]);
+  });
+
+  test('placeShipRandomly never overlaps existing ships', () => {
+    const board = new Gameboard();
+    board.placeShipRandomly(4);
+    board.placeShipRandomly(4);
+    board.placeShipRandomly(3);
+    board.placeShipRandomly(3);
+    board.placeShipRandomly(2);
+
+    const all = board.ships.flatMap((s) => s.coordinates);
+    const unique = new Set(all.map((c) => `${c.x},${c.y}`));
+    expect(unique.size).toBe(all.length);
+  });
+
+  test('placeShipRandomly throws if it cannot fit', () => {
+    const board = new Gameboard(2);
+    // Fill the whole 2x2 board first with rand=0 (always horizontal at 0,0)
+    // Then a second ship will overlap the first forever
+    board.placeShipRandomly(2, () => 0);
+    expect(() => board.placeShipRandomly(2, () => 0)).toThrow();
+  });
+});
