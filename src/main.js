@@ -5,26 +5,18 @@ import './style.css';
 const human = new Player('You', 'real');
 const cpu = new Player('HAL', 'computer');
 
-// Predetermined placements for now
-const fleet = [
-  { length: 5, start: { x: 0, y: 0 }, dir: 'horizontal' },
-  { length: 4, start: { x: 0, y: 2 }, dir: 'horizontal' },
-  { length: 3, start: { x: 0, y: 4 }, dir: 'horizontal' },
-  { length: 3, start: { x: 0, y: 6 }, dir: 'horizontal' },
-  { length: 2, start: { x: 0, y: 8 }, dir: 'horizontal' },
-];
-
-for (const { length, start, dir } of fleet) {
-  human.gameboard.placeShip(length, start, dir);
-  cpu.gameboard.placeShip(length, start, dir);
-}
+// Fleet definition — used for both players
+const FLEET = [5, 4, 3, 3, 2];
 
 const playerBoardEl = document.getElementById('player-board');
 const enemyBoardEl = document.getElementById('enemy-board');
 const statusEl = document.getElementById('status');
+const controlsEl = document.getElementById('controls');
+const shuffleBtn = document.getElementById('shuffle');
+const startBtn = document.getElementById('start');
 
 // Game state
-let gameOver = false;
+let phase = 'placement'; // 'placement' | 'playing' | 'over'
 
 function render() {
   renderBoard(playerBoardEl, human.gameboard, { revealShips: true });
@@ -35,9 +27,45 @@ function setStatus(text) {
   statusEl.textContent = text;
 }
 
+// Placement phase
+function placeHumanFleetRandomly() {
+  human.gameboard = new (human.gameboard.constructor)();
+  for (const length of FLEET) {
+    human.gameboard.placeShipRandomly(length);
+  }
+}
+
+function beginPlacement() {
+  phase = 'placement';
+  placeHumanFleetRandomly();
+  render();
+  setStatus('Place your ships — shuffle or start when ready.');
+  controlsEl.classList.remove('hidden');
+  shuffleBtn.disabled = false;
+  startBtn.disabled = false;
+}
+
+// Playing phase
+function beginGame() {
+  phase = 'playing';
+  controlsEl.classList.add('hidden');
+
+  for (const length of FLEET) {
+    cpu.gameboard.placeShipRandomly(length);
+  }
+
+  render();
+  setStatus('Your turn — click the enemy board.');
+}
+
+function endGame(winner) {
+  phase = 'over';
+  setStatus(winner === 'human' ? 'You win! 🎉' : 'Enemy wins 💀');
+}
+
 // Turn loop
 function handleEnemyClick(event) {
-  if (gameOver) return;
+  if (phase !== 'playing') return;
   const cell = event.target.closest('.cell');
   if (!cell) return;
 
@@ -47,26 +75,24 @@ function handleEnemyClick(event) {
   try {
     human.attack(cpu.gameboard, coord);
   } catch {
-    return; // already attacked — ignore click
+    return; // already attacked? ignore click
   }
   render();
 
   if (cpu.gameboard.allSunk()) {
-    gameOver = true;
-    setStatus('You win! 🎉');
+    endGame('human');
     return;
   }
 
   // Computer's turn
   setStatus('Enemy is thinking...');
   setTimeout(() => {
-    if (gameOver) return;
+    if (phase !== 'playing') return;
     cpu.randomAttack(human.gameboard);
     render();
 
     if (human.gameboard.allSunk()) {
-      gameOver = true;
-      setStatus('Enemy wins 💀');
+      endGame('cpu');
       return;
     }
 
@@ -74,8 +100,17 @@ function handleEnemyClick(event) {
   }, 400);
 }
 
+// Wire buttons
+shuffleBtn.addEventListener('click', () => {
+  if (phase !== 'placement') return;
+  placeHumanFleetRandomly();
+  render();
+  setStatus('Place your ships — shuffle or start when ready.');
+});
+
+startBtn.addEventListener('click', beginGame);
+
 enemyBoardEl.addEventListener('click', handleEnemyClick);
 
 // Initial paint
-render();
-setStatus('Your turn — click the enemy board.');
+beginPlacement();

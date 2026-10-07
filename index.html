@@ -8,6 +8,12 @@
   </head>
   <body>
     <h1>Battleship</h1>
+
+    <div id="controls">
+      <button id="shuffle">Shuffle</button>
+      <button id="start">Start Game</button>
+    </div>
+
     <div class="boards">
       <section class="board-wrapper">
         <h2>You</h2>
@@ -18,7 +24,9 @@
         <div id="enemy-board" class="board"></div>
       </section>
     </div>
-    <p id="status">Your turn — click the enemy board.</p>
+
+    <p id="status">Place your ships — shuffle or start when ready.</p>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
